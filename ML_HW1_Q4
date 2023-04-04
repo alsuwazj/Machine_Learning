@@ -1,0 +1,46 @@
+#Q4: Use iris dataset to train multinomial logistic regression?
+#Perform three fold cross validation
+#report the cross validation score      
+
+import numpy as np
+from sklearn import datasets
+iris = datasets.load_iris()
+list(iris.keys())
+
+
+#Split the data 
+X = iris.data
+y = iris.target
+
+X_train = X[:-20]
+X_test = X[-20:]
+
+y_train = y[:-20]
+y_test = y[-20:]
+
+#Logistic Regression
+from sklearn.linear_model import LogisticRegression
+#from warnings import simplefilter
+#from sklearn.exceptions import ConvergenceWarning
+#simplefilter("ignore", category=ConvergenceWarning)
+
+log_reg = LogisticRegression(multi_class="multinomial",solver="lbfgs", C=10**10, random_state=42)
+log_reg.fit(X_train, y_train)
+prediction = log_reg.predict(X_test)
+
+# cross-validation
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import mean_squared_error
+#kfold = KFold(3,True,1)
+#for train, test in kfold.split(X,y):
+#    print('train: %s, test: %s' % (X_train, y_train))
+    
+accuracy = cross_val_score(log_reg, X, y, cv=3,scoring='accuracy')
+
+
+print("Logistic Regression for iris data set with 3 fold cross validation: \n")
+print("Predictions on X_test: ", prediction, "\n")
+print("Cross-validation Scores: ", accuracy, "\n")
+print("The mean of Cross-validation Scores: ", accuracy.mean(), "\n")
+print("The mean squared error: \n", np.sqrt(mean_squared_error(y_test, prediction)))
