@@ -1,0 +1,53 @@
+#Q3: Use the fish.csv file and fit a predictive model to 
+#estimate weight of the fish from its length, height and width
+#Report the coefficients, standard error, use solver: 
+#least square and Stochastic gradient descent
+
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy.linalg import lstsq
+from sklearn import linear_model
+import pandas as pd
+
+
+data = pd.read_excel('Fish.xls')
+
+from sklearn.model_selection import train_test_split
+X = data.iloc[:, 2:].values
+y = data.iloc[:,1].values
+
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.20, random_state=42)
+
+X_train = X[:-20]
+X_test = X[-20:]
+
+y_train = y[:-20]
+y_test = y[-20:]
+
+#LinearRegresson
+from sklearn import linear_model
+regr = linear_model.LinearRegression()
+regr.fit(X_train, y_train)
+prediction = regr.predict(X_test)
+
+print("Linear Regression: \n")
+print('Intercept: \n', regr.intercept_, "\n")
+print('Coefficients: \n', regr.coef_, "\n")
+print("Mean squared error: %.2f"% np.mean((prediction - y_test) ** 2), "\n")
+print("Prediction on X_test: \n", prediction, "\n")
+
+print("*******************************************************************\n")
+
+## Stochastic Gradient Descent
+from sklearn.linear_model import SGDRegressor
+sgd_reg = SGDRegressor(max_iter=1000, tol=1e-3, penalty=None, eta0=0.1, random_state=42)
+sgd_reg.fit(X_train, y_train.ravel())
+SGD_prediction = sgd_reg.predict(X_test)
+
+print("Stochastic Gradient Descent: \n")
+print("Intercept: \n",sgd_reg.intercept_ , "\n")
+print("Coefficients: \n", sgd_reg.coef_, "\n")
+print("Mean squared error: %.2f"% np.sqrt(np.mean((SGD_prediction - y_test) ** 2)), "\n")
+print("SGD prediction: \n", SGD_prediction)
+
+print(X_train.shape)
