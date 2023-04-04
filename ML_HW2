@@ -1,0 +1,141 @@
+
+
+import tarfile
+import numpy as np
+from sklearn import datasets
+from sklearn.pipeline import Pipeline 
+from sklearn.preprocessing import StandardScaler 
+from sklearn.svm import LinearSVC
+import pandas as pd
+
+#load the data
+df = pd.read_csv("/content/fer2013.csv")
+df.keys
+
+#train dataset
+train = df[["emotion", "pixels"]][df["Usage"] == "Training"]
+train
+
+#preparing the dataset and covert it to float array of size X_train(28709, 2304)
+#Considering only pixel col for x and emothion col for y
+X_train = np.array(train['pixels']).tolist()
+y_train = np.array(train['emotion'])
+
+print(type(X_train))
+#reshape the pixel col to 1-D with 2304
+#convert the data from string list to float
+X = []
+for xseq in X_train:
+    xx = [int(xp) for xp in xseq.split(' ')]
+    xx = np.asarray(xx).reshape(2304)
+    X.append(xx.astype('float32'))
+
+X_train = np.asarray(X)
+X_trian = np.expand_dims(X, -1)
+
+
+X_train = np.array(X_train, 'float32')
+y_train = np.array(y_train, 'float32')
+
+X_train.shape
+
+#test dataset
+test = df[["emotion", "pixels"]][df["Usage"]=="PublicTest"]
+test
+
+#preparing the dataset and covert it to float array of size X_train(3589, 2304)
+X_test = np.array(test['pixels'])
+
+#.tolist()
+y_test = np.array(test['emotion'])
+
+print(X_test.shape)
+#reshape the pixel col to 1-D with 2304
+#convert the data from string list to float
+X = []
+for xseq in X_test:
+    xx = [int(xp) for xp in xseq.split(' ')]
+    xx = np.asarray(xx).reshape(2304)
+    X.append(xx.astype('float32'))
+
+X_test = np.asarray(X)
+#X_test = np.expand_dims(X, -1)
+
+#X_train = np.fromstring(X_train, sep=' ')
+#X_train = np.vstack(X_train['pixels'].values)
+X_test = np.array(X_test, 'float32')
+X_text = X_test.reshape(3589, 2304)
+y_test = np.array(y_test, 'float32')
+
+X_test.shape
+
+"""# New Section"""
+
+#taking small portion of the data
+X_train = X_train[:-28000] 
+y_train = y_train[:-28000]
+
+#Using PCA to reduce the dimentions and accelrate the running time
+from sklearn.decomposition import PCA 
+pca = PCA(n_components= 5)
+pca.fit_transform(X_train)
+
+#Linear SVM  ** faild to converge
+svm_clf = Pipeline([
+("scaler", StandardScaler()),
+("linear_svc", LinearSVC(C=1, loss="hinge",max_iter = 1000)),
+])
+
+svm_clf.fit(X_train, y_train)
+
+#predict
+predicted = svm_clf.predict(X_test)
+
+#calculate the accuracy
+from sklearn.metrics import accuracy_score
+print(accuracy_score(y_test, predicted))
+
+#non linear SVM using ploy ** takes too much time so I'm using rbf only
+from sklearn.svm import SVC
+poly_kernel_svm_clf = Pipeline([
+("scaler", StandardScaler()),
+("svm_clf", SVC(kernel="poly", degree=100, coef0=1, C=5))
+])
+poly_kernel_svm_clf.fit(X_train, y_train)
+
+"""# New Section"""
+
+#non linear SVM using rbf
+from sklearn.svm import SVC
+rbf_kernel_svm_clf = Pipeline([
+("scaler", StandardScaler()),
+("svm_clf", SVC(kernel="rbf", gamma=5, C=0.001))
+])
+rbf_kernel_svm_clf.fit(X_train, y_train)
+
+predicted_rbf = rbf_kernel_svm_clf.predict(X_test)
+
+#the accuracy for the rbf
+from sklearn.metrics import accuracy_score
+print(accuracy_score(y_test, predicted_rbf))
+
+# enhance the performance using bagging
+from sklearn.ensemble import BaggingClassifier
+bag_clf = BaggingClassifier(
+SVC(), n_estimators=500,
+max_samples=100, bootstrap=True, n_jobs=-1)
+bag_clf.fit(X_train, y_train)
+#y_pred = bag_clf.predict(X)
+
+bag_pred = bag_clf.predict(X_test)
+
+#the accuracy ** enhanced little
+print(accuracy_score(y_test, bag_pred))
+
+# enhance the performance using boosting ** takes to much time
+from sklearn.ensemble import AdaBoostClassifier
+ada_clf = AdaBoostClassifier(
+SVC(), n_estimators=200,
+algorithm="SAMME", learning_rate=0.5)
+ada_clf.fit(X_train, y_train)
+
